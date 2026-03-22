@@ -5,34 +5,34 @@ import { loadCSV } from './text_clear';
 async function runPipeline() {
   try {
 
-    // Extração dos dados
+    // Data extraction
     const { textosLimpos, labels } = await loadCSV('liberal_conservatives.csv');
 
 
-    // console.log(`Dados de textos limpos: ....`)
+    // console.log(`Clean text data: ....`)
     // console.log(textosLimpos)
-    console.log("Carregando o modelo USE...");
+    console.log("Loading the USE model...");
     const encoder = await use.load();
 
-    console.log("Iniciando a geração de embeddings em lotes...");
+    console.log("Starting batch embedding generation...");
 
-    const TAMANHO_LOTE = 500; // Ajuste este número dependendo da sua memória RAM
-    const tensoresTemporarios = []; // Array para guardar os pedaços
+    const TAMANHO_LOTE = 500; // Adjust this number depending on your RAM
+    const tensoresTemporarios = []; // Array to store the chunks
 
 
 
     const embeddingsTensor = await encoder.embed(textosLimpos);
     const labelsTensor = tf.tensor2d(labels, [labels.length, 1]);
-    // 3. Convertendo textos para Tensores
+    // 3. Converting texts to Tensors
     const model = await configureNeuralNetwork();
     await trainingModel({ embeddingsTensor: embeddingsTensor as unknown as tf.Tensor2D, labelsTensor, model });
-    console.log("Textos convertidos para Tensores com sucesso!");
+    console.log("Texts successfully converted to Tensors!");
 
-    // Libera a memória da RAM (boa prática no TensorFlow)
+    // Frees RAM memory (best practice in TensorFlow)
     embeddingsTensor.dispose();
     labelsTensor.dispose();
   } catch (error) {
-    console.error("Erro ao carregar o modelo:", error);
+    console.error("Error loading the model:", error);
   }
 }
 
@@ -63,10 +63,10 @@ async function trainingModel({ embeddingsTensor, labelsTensor, model }: { embedd
 async function configureNeuralNetwork(): Promise<tf.Sequential> {
 
 
-  // 4. Construção da rede neural
+  // 4. Neural network construction
   const model = tf.sequential();
   /***
-   * é 512 o [inputShape] porque o modelo USE gera embeddings de 512 dimensões
+   * [inputShape] is 512 because the USE model generates 512-dimensional embeddings
    * 
    */
   model.add(tf.layers.dense({ inputShape: [512], units: 128, activation: 'relu' }));
@@ -97,6 +97,6 @@ async function configureNeuralNetwork(): Promise<tf.Sequential> {
 
 // Asynchronous self-executing function
 (async () => {
-  await tf.ready(); // Garante que o backend do Node.js está inicializado
+  await tf.ready(); // Ensures the Node.js backend is initialized
   await runPipeline();
 })();
